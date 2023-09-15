@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { PetItem } from "./components/PetItem";
@@ -6,7 +7,7 @@ import { TxError } from "./components/TxError";
 import { WalletNotDetected } from "./components/WalletNotDetected";
 import { ConnectWallet } from "./components/ConnectWallet";
 
-const HARDHAT_NETWORK_ID = 31337;
+const HARDHAT_NETWORK_ID = Number(process.env.REACT_APP_NETWORK_ID);
 
 function Dapp() {
   const [pets, setPets] = useState([]);
@@ -27,16 +28,48 @@ function Dapp() {
       const [address] = await window.ethereum.request({method: "eth_requestAccounts"});
 
       await checkNetwork();
+      initializeDapp(address);
 
-      setSelectedAddress(address);
+      window.ethereum.on("accountsChanged", ([newAddress]) => {
+        if (newAddress === undefined){
+          setSelectedAddress(undefined);
+          return;
+        }
+
+        initializeDapp(newAddress);
+
+      })
 
     } catch(e) {
       console.log(e.message);
     }
   }
 
+  async function initializeDapp(address){
+    setSelectedAddress(address);
+    const contract = await initContract();
+
+  }
+
+  async function initContract(){
+    alert("i should init the contract");
+  }
+
+  async function switchNetwork() {
+    const chainIdHex = `0x${HARDHAT_NETWORK_ID.toString(16)}`;
+
+    return await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{chainId: chainIdHex}]
+    });
+  }
+
   async function checkNetwork(){
-    alert(window.ethereum.networkVersion);
+    if(window.ethereum.networkVersion !== HARDHAT_NETWORK_ID.toString()){
+      return switchNetwork();
+    }
+      return null;
+    
   }
 
   if (!window.ethereum){
