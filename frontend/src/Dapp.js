@@ -7,11 +7,17 @@ import { TxError } from "./components/TxError";
 import { WalletNotDetected } from "./components/WalletNotDetected";
 import { ConnectWallet } from "./components/ConnectWallet";
 
+import {ethers} from "ethers";
+import contractAddress from "./contracts/contract-address-localhost.json";
+import PetAdoptionArtifact from "./contracts/PetAdoption.json";
+
 const HARDHAT_NETWORK_ID = Number(process.env.REACT_APP_NETWORK_ID);
 
 function Dapp() {
   const [pets, setPets] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(undefined);
+  const [contract, setContract] = useState(undefined);
+  const [adoptedPets, setAdoptedPets] = useState([]);
 
   useEffect(()=>{
     async function fetchPets() {
@@ -48,11 +54,40 @@ function Dapp() {
   async function initializeDapp(address){
     setSelectedAddress(address);
     const contract = await initContract();
+    getAdoptedPets(contract);
+
+    console.log(contract);
 
   }
 
   async function initContract(){
-    alert("i should init the contract");
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner(0);
+    console.log(signer);
+    const contract = new ethers.Contract(
+      contractAddress.PetAdoption,
+      PetAdoptionArtifact.abi,
+      signer
+    );
+
+    setContract(contract);
+    return contract;
+
+  }
+
+  async function getAdoptedPets(contract){
+    try{
+      const adoptedPets = await contract.getAllAdoptedPets();
+
+      if (adoptedPets.length > 0){
+        setAdoptedPets(adoptedPets.map(petIdx => Number(petIdx)));
+      } else {
+        setAdoptedPets([]);
+      }
+
+    } catch(e){
+      console.log(e.message);
+    }
   }
 
   async function switchNetwork() {
