@@ -25,7 +25,6 @@ contract PetAdoption {
     require(petIdxToOwnerAddress[adoptIdx] == address(0), "pet is already adopted");
 
     petIdxToOwnerAddress[adoptIdx] = msg.sender;
-
     ownerAddressToPetList[msg.sender].push(adoptIdx);
     allAdoptedPets.push(adoptIdx);
 

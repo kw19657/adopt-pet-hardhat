@@ -10,14 +10,19 @@ import { ConnectWallet } from "./components/ConnectWallet";
 import {ethers} from "ethers";
 import contractAddress from "./contracts/contract-address-localhost.json";
 import PetAdoptionArtifact from "./contracts/PetAdoption.json";
+import { TxInfo } from "./components/TxInfo";
 
 const HARDHAT_NETWORK_ID = Number(process.env.REACT_APP_NETWORK_ID);
 
 function Dapp() {
   const [pets, setPets] = useState([]);
+  const [adoptedPets, setAdoptedPets] = useState([]);
+  const [ownedPets, setOwnedPets] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(undefined);
   const [contract, setContract] = useState(undefined);
-  const [adoptedPets, setAdoptedPets] = useState([]);
+  const [txError, setTxError] = useState(undefined);
+  const [txInfo, setTxInfo] = useState(undefined);
+  const [view, setView] = useState("home");
 
   useEffect(()=>{
     async function fetchPets() {
@@ -38,7 +43,13 @@ function Dapp() {
 
       window.ethereum.on("accountsChanged", ([newAddress]) => {
         if (newAddress === undefined){
+          setAdoptedPets([]);
+          setOwnedPets([]);
           setSelectedAddress(undefined);
+          setContract(undefined);
+          setTxError(undefined);
+          setTxInfo(undefined);
+          setView("home");
           return;
         }
 
@@ -86,7 +97,30 @@ function Dapp() {
       }
 
     } catch(e){
-      console.log(e.message);
+      console.error(e.message);
+    }
+  }
+
+  async function adoptPet(id){
+    try{
+      const tx = await contract.adoptPet(id);
+      setTxInfo(tx.hash);
+      const receipt = await tx.wait();
+
+      await new Promise((res)=> setTimeout(res, 2000));
+
+      if(receipt.status === 0){
+        throw new Error("Transaction failed!");
+      }
+
+      setAdoptedPets([...adoptedPets, id]);
+      setOwnedPets([...ownedPets, id]);
+
+    } catch(e){
+      console.error(e.reason);
+      setTxError(e?.reason);
+    } finally{
+      setTxInfo(undefined);
     }
   }
 
@@ -117,14 +151,35 @@ function Dapp() {
 
   return (
     <div className="container">
-      <TxError />
+      {
+        txInfo &&
+        <TxInfo
+          message={txInfo}
+        />
+      }
+      {txError && 
+        <TxError 
+        dismiss={()=> setTxError(undefined)}
+        message={txError}/>
+      }
+      
       <br />
-      <Navbar address={selectedAddress}/>
-
+      <Navbar
+        setView={setView}
+        address={selectedAddress}
+      />
       <div className="items">
-        { pets.map((pet)=>
-          <PetItem key={pet.id} pet={pet} />
-        )}
+        { view === "home"?
+          pets.map((pet)=>
+            <PetItem 
+            key={pet.id} 
+            pet={pet}
+            inProgress={!!txInfo}
+            disabled={adoptedPets.includes(pet.id)}
+            adoptPet={()=> adoptPet(pet.id)}
+            />) :
+            JSON.stringify(ownedPets)
+        }
       </div>
     </div>
   );
