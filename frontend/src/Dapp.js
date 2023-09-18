@@ -96,6 +96,12 @@ function Dapp() {
         setAdoptedPets([]);
       }
 
+      if (ownedPets.length > 0){
+        setOwnedPets(ownedPets.map(petIdx => Number(petIdx)));
+      } else {
+        setOwnedPets([]);
+      }
+
     } catch(e){
       console.error(e.message);
     }
@@ -178,7 +184,16 @@ function Dapp() {
             disabled={adoptedPets.includes(pet.id)}
             adoptPet={()=> adoptPet(pet.id)}
             />) :
-            JSON.stringify(ownedPets)
+            pets
+            .filter(pet => ownedPets.includes(pet.id))
+            .map((pet)=>
+            <PetItem 
+            key={pet.id} 
+            pet={pet}
+            inProgress={!!txInfo}
+            disabled={adoptedPets.includes(pet.id)}
+            adoptPet={()=> adoptPet(pet.id)}
+            />)
         }
       </div>
     </div>
