@@ -2,8 +2,8 @@
 const keys = require("./keys.json");
 
 require("@nomicfoundation/hardhat-toolbox")
-// require("@nomiclabs/hardhat-ethers");
-// require("@nomiclabs/hardhat-etherscan");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
